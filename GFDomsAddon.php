@@ -48,6 +48,7 @@ class GFDomsAddOn extends GFAddOn{
 			//echo $entry['date_created'] . "###";
 	
 	/*
+	* 	TO DO
 	*	create dictionary, store entry id, and timestamp (converted to unix) when form is submitted
 	*/
 		
@@ -101,6 +102,7 @@ class GFDomsAddOn extends GFAddOn{
 		//var_dump($content);
 	
 	/*
+	* TO DO
 	*	search through dictionary to compare all entries older than user selected option
 	*	grab the id of all matching entries
 	*	grab form 1 entry id's to delete
