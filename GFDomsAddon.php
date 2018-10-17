@@ -28,11 +28,12 @@ class GFDomsAddOn extends GFAddOn{
 			parent::init();
 			add_filter('gform_post_submission_1', array($this, 'save_name'));
 			add_filter('gform_confirmation_1', array($this, 'conf_msg'));
-		if ( is_admin() ) {
-			//add_filter('gform_pre_render_2', 'populate_form');
+			add_filter('gform_pre_render_2', array($this, 'populate_choices'));
+			add_filter('gform_pre_validation_2', array($this, 'populate_choices'));
+			add_filter('gform_admin_pre_render_2', array($this, 'populate_choices'));
+			add_filter( 'gform_pre_submission_filter_2', array($this, 'populate_choices'));			
 			add_filter('gform_post_submission_2', array($this, 'save_selection'));
 			add_filter('gform_confirmation_2', array($this, 'admin_conf_msg'));
-		}
 	}
 
 //USER FORM
@@ -53,7 +54,7 @@ class GFDomsAddOn extends GFAddOn{
 			//populate array with id's associated with each submission time
 			array_push($time_ids, $rest, $entry['id']);
 		}	
-		var_dump($time_ids);
+		//var_dump($time_ids);//DEBUG
 	}
 	
 	public function conf_msg($confirmation){
@@ -64,28 +65,36 @@ class GFDomsAddOn extends GFAddOn{
 	
 	
 //ADMIN FORM
-/*	function populate_form($form){
+	function populate_choices($form){
 		//get all forms
-		$forms = GFAPI::get_forms();
+		$myforms = GFAPI::get_forms();
+		//print_r($myforms);//DEBUG
 		
-		//make a list of forms and remove the admin form
-		$all_forms = [];
-		foreach ($forms as $form){
-			array_push($all_forms, $form['title']);
+		//pass list data to drop down option in the form		
+		$choices = array();
+			
+		foreach($myforms as $formt){
+			if ($formt['title'] != 'Admin_Form'){
+				$choices[] = array('value' =>$formt['title'], 'text' =>$formt['title']);
+			}
 		}
-		$key = array_search('Admin_Form', $all_forms);
-		unset($all_forms[$key]);
-		var_dump($all_forms);
-		
-		//pass list data to drop down option in the form
-
+			$field['choices'] = $choices;
+			//print_r($choices);//DEBUG
+			
+		foreach( $form['fields'] as &$field ) {
+			if ( $field->id == 1 ) {
+				$field->choices = $choices;
+			}
+		}
+		return $form;
 	}
-*/
-	
+
+
 	
 	public function plugin_page(){	
 		echo '<h1>Admin Manage Entries</h1>';
-		gravity_form( 2, false, false, false, '', false );
+		//gravity_form( 2, false, false, false, '', false );
+		echo '<a href="http://localhost/ddv_test_site/admin/">Link</a>';
 	}
 	
 	public function save_selection(){
@@ -95,6 +104,24 @@ class GFDomsAddOn extends GFAddOn{
 	*	grab the id of all matching entries
 	*	grab form 1 entry id's to delete
 	*/
+		
+		$all_selections = [];
+		$all_data = [];
+		$all_data = GFAPI::get_entries(2);#select form id to get entries from		
+		foreach ($all_data as $i){
+			$all_selections +=$i;
+		}
+		var_dump($all_selections);
+			//echo $all_selections['form_id'];
+			//var_dump($all_selections['1']);
+			$this->form_choice = $all_selections['1'];
+			$this->range_choice = $all_selections['4'];
+			
+		//get the field
+		///$field = GFFormsModel::get_field($form, 2);
+		//get the html content
+		//$content = $field->content;
+		//var_dump($content);
 		
 	}
 	
