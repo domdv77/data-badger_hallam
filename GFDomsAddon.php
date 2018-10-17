@@ -14,7 +14,7 @@ class GFDomsAddOn extends GFAddOn{
 
 	private static $_instance = null;
 	
-	protected $form_choices = "FORM";
+	protected $form_choice = "FORM";
 	protected $range_choice = "";
 	
 	public static function get_instance(){
@@ -40,6 +40,7 @@ class GFDomsAddOn extends GFAddOn{
 	public function save_name( $form ){
 	/*
 	*	create array, store entry id, and timestamp (converted to unix) when form is submitted
+		for deleting submissions based on date created
 	*/
 		$all = [];		
 		$all_entries = GFAPI::get_entries(1);//form id 1
@@ -58,6 +59,7 @@ class GFDomsAddOn extends GFAddOn{
 	}
 	
 	public function conf_msg($confirmation){
+		//show personal user message on successful form submission
 		$confirmation = 'Thank you ' . $_POST['input_1_3'] . ' for your message<br>';
 		$confirmation .= 'submitted on ' . $_POST['input_7'];
 		return $confirmation;
@@ -85,7 +87,7 @@ class GFDomsAddOn extends GFAddOn{
 			if ( $field->id == 1 ) {
 				$field->choices = $choices;
 			}
-		}
+		}		
 		return $form;
 	}
 
@@ -94,40 +96,40 @@ class GFDomsAddOn extends GFAddOn{
 	public function plugin_page(){	
 		echo '<h1>Admin Manage Entries</h1>';
 		//gravity_form( 2, false, false, false, '', false );
-		echo '<a href="http://localhost/ddv_test_site/admin/">Link</a>';
+		echo '<a href="http://localhost/ddv_test_site/admin/">Link</a>';//change hard coded link
 	}
 	
-	public function save_selection(){
-		
+	public function save_selection($form){		
 	/*
 	*	search through dictionary to compare all entries older than user selected option
 	*	grab the id of all matching entries
 	*	grab form 1 entry id's to delete
 	*/
-		
-		$all_selections = [];
-		$all_data = [];
-		$all_data = GFAPI::get_entries(2);#select form id to get entries from		
-		foreach ($all_data as $i){
-			$all_selections +=$i;
-		}
-		var_dump($all_selections);
-			//echo $all_selections['form_id'];
-			//var_dump($all_selections['1']);
-			$this->form_choice = $all_selections['1'];
-			$this->range_choice = $all_selections['4'];
-			
-		//get the field
-		///$field = GFFormsModel::get_field($form, 2);
-		//get the html content
-		//$content = $field->content;
-		//var_dump($content);
-		
+				
+		//TEST CODE - NOT FULLY FUNCTIONAL
+			$all_selections = [];
+			$all_data = [];
+			$all_data = GFAPI::get_entries(2);#select form id to get entries from		
+			foreach ($all_data as $i){
+				$all_selections +=$i;
+			}
+			//var_dump($all_selections);
+				//echo $all_selections['form_id'];
+				//var_dump($all_selections['1']);
+				$this->form_choice = $all_selections['1'];
+				$this->range_choice = $all_selections['4'];
+				
+			//get the field
+			///$field = GFFormsModel::get_field($form, 2);
+			//get the html content
+			//$content = $field->content;
+			//var_dump($content);
+	
 	}
 	
 	public function admin_conf_msg($admin_conf){
-		$admin_conf = '<br><br><h2>Entries deleted succesfully</h2>';
-		$admin_conf .= '<br><br>You selected form ID: ' . $_POST['input_1'] . '<br>';
+		$admin_conf = '<h2>Entries deleted successfully</h2>';
+		$admin_conf .= '<br><br>You selected form ID: ' . $_POST['input_1'] . '<br>';//to do: Replace post with form fields
 		if ($_POST['input_4'] == 'all'){
 			$admin_conf .= 'and to delete ' . $_POST['input_4'] . ' entries<br>';
 		}else{
