@@ -14,8 +14,8 @@ class GFDomsAddOn extends GFAddOn{
 
 	private static $_instance = null;
 	
-	protected $form_choice = "FORM";
-	protected $range_choice = "";
+	//protected $form_choice = "FORM";
+	//protected $range_choice = "";
 	
 	public static function get_instance(){
 		if (self::$_instance == null){
@@ -26,7 +26,6 @@ class GFDomsAddOn extends GFAddOn{
 	
 	public function init(){
 			parent::init();
-			add_filter('gform_post_submission_1', array($this, 'save_name'));
 			add_filter('gform_confirmation_1', array($this, 'conf_msg'));
 			add_filter('gform_pre_render_2', array($this, 'populate_choices'));
 			add_filter('gform_pre_validation_2', array($this, 'populate_choices'));
@@ -36,28 +35,7 @@ class GFDomsAddOn extends GFAddOn{
 			add_filter('gform_confirmation_2', array($this, 'admin_conf_msg'));
 	}
 
-//USER FORM
-	public function save_name( $form ){
-	/*
-	*	create array, store entry id, and timestamp (converted to unix) when form is submitted
-		for deleting submissions based on date created
-	*/
-		$all = [];		
-		$all_entries = GFAPI::get_entries(1);//form id 1
-		$time_ids = [];
-		
-		//get date created of each submission and convert to unix format
-		foreach($all_entries as $entry){
-			$all += $entry;
-			$rest = $entry['date_created'];
-			$y = strtotime($rest);
-			
-			//populate array with id's associated with each submission time
-			array_push($time_ids, $rest, $entry['id']);
-		}	
-		//var_dump($time_ids);//DEBUG
-	}
-	
+//USER FORM	
 	public function conf_msg($confirmation){
 		//show personal user message on successful form submission
 		$confirmation = 'Thank you ' . $_POST['input_1_3'] . ' for your message<br>';
@@ -68,9 +46,11 @@ class GFDomsAddOn extends GFAddOn{
 	
 //ADMIN FORM
 	function populate_choices($form){
+		//pre-populate admin form field 1 (dropdown) with all installed form
+		//to allow admin to select which form to process
+		
 		//get all forms
 		$myforms = GFAPI::get_forms();
-		//print_r($myforms);//DEBUG
 		
 		//pass list data to drop down option in the form		
 		$choices = array();
@@ -95,41 +75,83 @@ class GFDomsAddOn extends GFAddOn{
 	
 	public function plugin_page(){	
 		echo '<h1>Admin Manage Entries</h1>';
-		//gravity_form( 2, false, false, false, '', false );
+		//gravity_form( 2, false, false, false, '', false );//embedded dashboard form removed 
 		echo '<a href="http://localhost/ddv_test_site/admin/">Link</a>';//change hard coded link
 	}
+	
+	
 	
 	public function save_selection($form){		
 	/*
 	*	search through dictionary to compare all entries older than user selected option
 	*	grab the id of all matching entries
-	*	grab form 1 entry id's to delete
+	*	grab user-form entry id's to delete
 	*/
-				
-		//TEST CODE - NOT FULLY FUNCTIONAL
-			$all_selections = [];
-			$all_data = [];
-			$all_data = GFAPI::get_entries(2);#select form id to get entries from		
-			foreach ($all_data as $i){
-				$all_selections +=$i;
-			}
-			//var_dump($all_selections);
-				//echo $all_selections['form_id'];
-				//var_dump($all_selections['1']);
-				$this->form_choice = $all_selections['1'];
-				$this->range_choice = $all_selections['4'];
-				
-			//get the field
-			///$field = GFFormsModel::get_field($form, 2);
-			//get the html content
-			//$content = $field->content;
-			//var_dump($content);
 	
+		//get all forms
+		$myforms = GFAPI::get_forms();
+		//print_r($myforms);//DEBUG
+		
+		foreach ($myforms as $data){
+			if($data['title'] == "FORM"){
+				$xformid = $data['id'];
+			}
+			elseif($data['title'] == "Admin_Form"){
+				$admformid = $data['id'];
+			}
+		}
+		//echo $xformid;//DEBUG
+		
+		$all_data = [];
+		$all_data = GFAPI::get_entries($xformid);#select form to process via form_id and get entries
+		//var_dump($all_data);//DEBUG
+		$time_ids = [];
+		
+		//get date created of each submission and convert to unix format
+		foreach($all_data as $entry){
+			$rest = $entry['date_created'];
+			$y = strtotime($rest);//unix time
+			
+			//populate array with id's associated with each submission time
+			array_push($time_ids, $y, $entry['id']);
+		}	
+		//var_dump($time_ids);//DEBUG
+		
+		
+		//get admin selected options
+		
+		$adm_data = [];
+		$adm_data = GFAPI::get_form($admformid);
+		//print_r($adm_data);
+		$adm_entry = GFAPI::get_entry(4);
+		//print_r( $adm_entry);
+		
+		//foreach($adm_data as $adm_entry){
+		//	$sel_time = $adm_entry[4];
+		//	echo $sel_time;
+		//}
+		
+		//search user form for entries in search time period
+		//1 DAY
+		$start_date = date( '2018-10-01', strtotime('-30 days') );//Y-m-d TEST
+		$end_date = date( '2018-10-12', time() );//Y-m-d TEST
+		
+		$search_criteria['start_date'] = $start_date;
+		$search_criteria['end_date'] = $end_date;
+		
+		$search_criteria = array();
+		$sorting = array();
+		$paging = array( 'offset' => 0, 'page_size' => 2 );
+		$entries = GFAPI::get_entries( $xformid, $search_criteria, $sorting, $paging );
+		
+		//print_r($entries);//DEBUG
+		//return $xformid;
 	}
 	
 	public function admin_conf_msg($admin_conf){
 		$admin_conf = '<h2>Entries deleted successfully</h2>';
 		$admin_conf .= '<br><br>You selected form ID: ' . $_POST['input_1'] . '<br>';//to do: Replace post with form fields
+		//$admin_conf .= '<br><br>You selected form ID: ' . $xformid . '<br>';
 		if ($_POST['input_4'] == 'all'){
 			$admin_conf .= 'and to delete ' . $_POST['input_4'] . ' entries<br>';
 		}else{
